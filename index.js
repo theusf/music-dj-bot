@@ -65,22 +65,16 @@ client.on('message', async message => {
 async function execute(message, serverQueue) {
     
     const voiceChannel = message.member.voice.channel ;
-    //console.log(message)
-    //console.log(message.member)
-   // console.log(message.member.voice.channel )
-   const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
+
+    const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
 
     const songInfo = await ytdl.getInfo(url);
-
-    //console.log(songInfo);
 
     const song = {
 		title: songInfo.title,
 		url: songInfo.video_url,
     };
     
-  //  console.log(song)
-
     const queueContruct = {
         textChannel: message.channel,
         voiceChannel: voiceChannel,
