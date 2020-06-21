@@ -8,6 +8,13 @@ const {
     token,
 } = require('./config.json');
 
+const playlist_urls = [
+    'https://www.youtube.com/watch?v=snphzO9UFJM&t=3373s',
+    'https://www.youtube.com/watch?v=DtTooerFuiQ&t=13s',
+]
+
+
+
 
 const client = new Discord.Client();
 client.login(token);
@@ -61,8 +68,9 @@ async function execute(message, serverQueue) {
     //console.log(message)
     //console.log(message.member)
    // console.log(message.member.voice.channel )
+   const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
 
-    const songInfo = await ytdl.getInfo('https://www.youtube.com/watch?v=snphzO9UFJM&t=3373s');
+    const songInfo = await ytdl.getInfo(url);
 
     //console.log(songInfo);
 
