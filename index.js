@@ -40,35 +40,52 @@ client.once('disconnect', () => {
 
 client.on('message', async message => {
 
-    if (message.author.bot) return; // if message from bots
+    try {
 
-    if (!message.content.startsWith(prefix)) return; // if dont start with prefix
 
-    const serverQueue = queue.get(message.guild.id);
 
-    if (message.content.startsWith(`${prefix}play`)) {
-        execute(message, serverQueue);
-        return;
-    }
-    else if (message.content.startsWith(`${prefix}stop`)) {
-        stop(message, serverQueue);
-        return;
-    }
-    else if (message.content.startsWith(`${prefix}skip`)) {
-        execute(message, serverQueue);
-    }
-    else if (message.content.startsWith(`${prefix}stop`)) {
-        stop(message, serverQueue);
-        return;
-    }
-    else {
-        message.channel.send(`
+        if (message.author.bot) return; // if message from bots
+
+        if (!message.content.startsWith(prefix)) return; // if dont start with prefix
+
+        const serverQueue = queue.get(message.guild.id);
+
+        if (message.content.startsWith(`${prefix}play`)) {
+            execute(message, serverQueue);
+            return;
+        }
+        else if (message.content.startsWith(`${prefix}stop`)) {
+            stop(message, serverQueue);
+            return;
+        }
+        else if (message.content.startsWith(`${prefix}skip`)) {
+            execute(message, serverQueue);
+        }
+        else if (message.content.startsWith(`${prefix}stop`)) {
+            stop(message, serverQueue);
+            return;
+        }
+        else {
+            message.channel.send(`
         You need to enter a valid command! 
         ~play - to play a random lofi playlist or chnage the playlist
         ~stop - stop playing
         ~skip - stop playing
         `)
+        }
+
+
+    } catch (err) {
+        console.log(err);
+
+        queue.delete(message.guild.id);
+
+        if (serverQueue)
+            serverQueue.voiceChannel.leave();
+
+        return message.channel.send(`An error happened and i cant play 😢: ${err.message}`);
     }
+
 
 
 });
@@ -128,49 +145,64 @@ function stop(message, serverQueue) {
 }
 
 async function play(guild, message) {
-    const serverQueue = queue.get(guild.id);
 
-    const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
+    try {
 
-    const songInfo = await ytdl.getInfo(url);
 
-    const song = {
-        title: songInfo.title,
-        url: songInfo.video_url,
-    };
+        const serverQueue = queue.get(guild.id);
 
-    if (!song) {
-        serverQueue.voiceChannel.leave();
-        queue.delete(guild.id);
-        return;
+        const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
+
+        const songInfo = await ytdl.getInfo(url);
+
+        const song = {
+            title: songInfo.title,
+            url: songInfo.video_url,
+        };
+
+        if (!song) {
+            serverQueue.voiceChannel.leave();
+            queue.delete(guild.id);
+            return;
+        }
+
+        message.channel.send(`${song.title} is now playing!`);
+
+        const stream = ytdl(song.url, { filter: 'audioonly' });
+
+        const dispatcher = serverQueue.connection.play(stream)
+            .on('start', () => {
+                message.channel.send(`${songInfo.video_url}`);
+            })
+            .on('end', () => {
+                console.log('Music ended!');
+                //serverQueue.songs.shift();
+
+                play(guild);
+            })
+            .on('error', error => {
+                console.error(error);
+
+                serverQueue.voiceChannel.leave();
+
+                queue.delete(guild.id);
+
+                return message.channel.send(`Ocorreu um erro! ${error}`);
+
+            });
+
+        dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     }
+    catch (err) {
+        console.log(err);
 
-    message.channel.send(`${song.title} is now playing!`);
+        queue.delete(message.guild.id);
 
-    const stream = ytdl(song.url, { filter: 'audioonly' });
-
-    const dispatcher = serverQueue.connection.play(stream)
-        .on('start', () => {
-            message.channel.send(`${songInfo.video_url}`);
-        })
-        .on('end', () => {
-            console.log('Music ended!');
-            //serverQueue.songs.shift();
-            
-            play(guild);
-        })
-        .on('error', error => {
-            console.error(error);
-
+        if (serverQueue)
             serverQueue.voiceChannel.leave();
 
-            queue.delete(guild.id);
-
-            return message.channel.send(`Ocorreu um erro! ${error}`);
-
-        });
-
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        return message.channel.send(`An error happened and i cant play 😢: ${err.message}`);
+    }
 
 }
 
