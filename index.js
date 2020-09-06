@@ -177,8 +177,9 @@ async function play(guild, message) {
             .on('end', () => {
                 console.log('Music ended!');
                 //serverQueue.songs.shift();
+                message.channel.send(`Music ended!`);
 
-                play(guild);
+                play(guild,message);
             })
             .on('error', error => {
                 console.error(error);
