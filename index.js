@@ -1,12 +1,14 @@
-const ytdl = require('ytdl-core');
+//const ytdl = require('ytdl-core');
 const Discord = require('discord.js');
 const queue = new Map();
+const ytdl = require('ytdl-core-discord');
+const youtube = require('youtube-search-without-api-key');
+const disbut = require('discord-buttons');
 
 require('dotenv').config();
 
 const token = process.env.TOKEN;
-const prefix = '~';
-
+const prefix = '-';
 
 const playlist_urls = [
     'https://www.youtube.com/watch?v=snphzO9UFJM&t=3373s',
@@ -21,12 +23,12 @@ const playlist_urls = [
     'https://www.youtube.com/watch?v=M-5zMRLxXcw'
 ]
 
-
 const client = new Discord.Client();
+disbut(client);
+
 client.login(token);
 
-
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log('Ready!');
 });
 
@@ -38,19 +40,37 @@ client.once('disconnect', () => {
     console.log('Disconnect!');
 });
 
+let buttonStop = new disbut.MessageButton()
+    .setStyle('red') //default: blurple
+    .setLabel('PARAR') //default: NO_LABEL_PROVIDED
+    .setID('btnStop') //note: if you use the style "url" you must provide url using .setURL('https://example.com')
+
+
+client.on('clickButton', async (button) => {
+    if (button.id === "btnStop") {
+        try {
+            await button.reply.defer()
+            const serverQueue = queue.get(button.message.guild.id);
+            stop(button.message, serverQueue);
+
+        }
+        catch (e) {
+            console.log('Erro')
+        }
+    }
+})
+
+
 client.on('message', async message => {
 
     try {
-
-
-
         if (message.author.bot) return; // if message from bots
 
         if (!message.content.startsWith(prefix)) return; // if dont start with prefix
 
         const serverQueue = queue.get(message.guild.id);
 
-        if (message.content.startsWith(`${prefix}play`)) {
+        if (message.content.startsWith(`${prefix}lofi`)) {
             execute(message, serverQueue);
             return;
         }
@@ -60,10 +80,18 @@ client.on('message', async message => {
         }
         else if (message.content.startsWith(`${prefix}skip`)) {
             execute(message, serverQueue);
+            return;
+
         }
         else if (message.content.startsWith(`${prefix}stop`)) {
             stop(message, serverQueue);
             return;
+        }
+        else if (message.content.startsWith(`${prefix}play`)) {
+            searchAndPlay(message, serverQueue);
+        }
+        else if (message.content.startsWith(`${prefix}p`)) {
+            searchAndPlay(message, serverQueue);
         }
         else {
             message.channel.send(`
@@ -90,8 +118,42 @@ client.on('message', async message => {
 
 });
 
+async function searchAndPlay(message, serverQueue) {
+    try {
+        let sanitized_message = message.content.replace(`${prefix}busca`, '')
+        sanitized_message = sanitized_message.replace('-p', '');
+        sanitized_message = sanitized_message.trim();
 
-async function execute(message, serverQueue) {
+        if (!sanitized_message) {
+            return message.channel.send(`Faltando o que buscar né o idiota`);
+        }
+
+        const search_param = sanitized_message
+
+        console.log(search_param)
+
+        message.channel.send(`Buscando **${search_param}** 🔍🤔`);
+
+        const videos = await youtube.search(search_param);
+
+        if (videos.length == 0) {
+            return message.channel.send(`Não achei nenhum vídeo no youtube com ${search_param} 🙅‍♂️❌`);
+        }
+
+        const video = videos[0]
+
+        const url = video.snippet.url;
+
+        execute(message, serverQueue, url)
+    }
+    catch (err) {
+        message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
+    }
+
+}
+
+
+async function execute(message, serverQueue, url = "") {
 
     try {
 
@@ -112,7 +174,7 @@ async function execute(message, serverQueue) {
 
         queueConstruct.connection = connection;
 
-        play(message.guild, message);
+        play(message.guild, message, url);
 
 
     } catch (err) {
@@ -123,7 +185,7 @@ async function execute(message, serverQueue) {
         if (serverQueue)
             serverQueue.voiceChannel.leave();
 
-        return message.channel.send(`An error happened and i cant play 😢: ${err.message}`);
+        return message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
     }
 
 
@@ -144,55 +206,60 @@ function stop(message, serverQueue) {
 
 }
 
-async function play(guild, message) {
+async function play(guild, message, url = "") {
+    const serverQueue = queue.get(guild.id);
 
     try {
 
+        url ? url : url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
 
-        const serverQueue = queue.get(guild.id);
+        try {
+            const songInfo = await ytdl.getInfo(url);
 
-        const url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
+            const song = {
+                title: songInfo.videoDetails.title,
+                url: songInfo.videoDetails.video_url,
+            };
 
-        const songInfo = await ytdl.getInfo(url);
-
-        const song = {
-            title: songInfo.title,
-            url: songInfo.video_url,
-        };
-
-        if (!song) {
-            serverQueue.voiceChannel.leave();
-            queue.delete(guild.id);
-            return;
-        }
-
-        message.channel.send(`${song.title} is now playing!`);
-
-        const stream = ytdl(song.url, { filter: 'audioonly' });
-
-        const dispatcher = serverQueue.connection.play(stream)
-            .on('start', () => {
-                message.channel.send(`${songInfo.video_url}`);
-            })
-            .on('end', () => {
-                console.log('Music ended!');
-                //serverQueue.songs.shift();
-                message.channel.send(`Music ended!`);
-
-                play(guild,message);
-            })
-            .on('error', error => {
-                console.error(error);
-
+            if (!song) {
                 serverQueue.voiceChannel.leave();
-
                 queue.delete(guild.id);
+                message.channel.send(`Vídeo não encontrado!`);
+                return;
+            }
 
-                return message.channel.send(`Ocorreu um erro! ${error}`);
+            console.log(song)
 
-            });
+            const dispatcher = serverQueue.connection.play(await ytdl(url), { type: 'opus' })
+                .on('start', () => {
+                    message.channel.send(`🎵🎧😼 Tocando **${song.title}** ! 🎶🎸🤠`);
+                    message.channel.send(`${song.url}`, buttonStop);
+                })
+                .on('end', () => {
+                    console.log('Fim da música!');
+                    //serverQueue.songs.shift();
+                    serverQueue.playing = false;
+                    message.channel.send(`A música acabou, indo para a próxima 🎼`);
 
-        dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+                    play(guild, message);
+                })
+                .on('error', error => {
+                    console.error(error);
+
+                    serverQueue.voiceChannel.leave();
+
+                    queue.delete(guild.id);
+
+                    return message.channel.send(`Ocorreu um erro! ${error}`);
+
+                });
+
+            dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        }
+        catch (e) {
+            message.channel.send(`Erro ao tentar tocar som ${url} : ${e.message}`);
+            serverQueue.voiceChannel.leave();
+        }
     }
     catch (err) {
         console.log(err);
