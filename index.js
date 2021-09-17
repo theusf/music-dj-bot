@@ -2,7 +2,7 @@
 const Discord = require('discord.js');
 const queue = new Map();
 const ytdl = require('ytdl-core-discord');
-const youtube = require('youtube-search-without-api-key');
+const youtube = require('./libs/youtube-search-without-api-key');
 const disbut = require('discord-buttons');
 
 require('dotenv').config();
