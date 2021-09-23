@@ -79,9 +79,8 @@ client.on('message', async message => {
             return;
         }
         else if (message.content.startsWith(`${prefix}skip`)) {
-            execute(message, serverQueue);
+            stop(message, serverQueue);
             return;
-
         }
         else if (message.content.startsWith(`${prefix}stop`)) {
             stop(message, serverQueue);
@@ -94,12 +93,12 @@ client.on('message', async message => {
             searchAndPlay(message, serverQueue);
         }
         else {
-            message.channel.send(`
-        You need to enter a valid command! 
-        ~play - to play a random lofi playlist or chnage the playlist
-        ~stop - stop playing
-        ~skip - stop playing
-        `)
+            message.channel.send("```diff" + "- Comando inválido" +  "```" + " ")
+            message.channel.send("```" +  `
+            -p ou -play {texto} ➡ Busca e toca música 
+            -skip ou - stop ➡ Para de tocar música
+            -lofi ➡ Tocar lofi de minecraft aleatório
+            ` + "```")
         }
 
 
@@ -154,21 +153,22 @@ async function searchAndPlay(message, serverQueue) {
 
 
 async function execute(message, serverQueue, url = "") {
-
     try {
-
         voiceChannel = message.member.voice.channel;
 
-        const queueConstruct = {
+        const queueConstruct = queue.get(message.guild.id) || {
             textChannel: message.channel,
             voiceChannel: voiceChannel,
             connection: null,
             songs: [],
             volume: 5,
-            playing: true,
+            playing: false,
         };
 
         queue.set(message.guild.id, queueConstruct);
+
+        if (queueConstruct.playing)
+            return 
 
         var connection = await voiceChannel.join();
 
@@ -242,6 +242,9 @@ async function play(guild, message, url = "") {
                     message.channel.send(`A música acabou, indo para a próxima 🎼`);
 
                     play(guild, message);
+                })
+                .on('finish',() => {
+                    message.channel.send(`A música acabou, indo para a próxima 🎼`);
                 })
                 .on('error', error => {
                     console.error(error);
