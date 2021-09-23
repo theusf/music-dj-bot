@@ -93,12 +93,12 @@ client.on('message', async message => {
             searchAndPlay(message, serverQueue);
         }
         else {
-            message.channel.send("```diff" + "- Comando inválido" +  "```" + " ")
-            message.channel.send("```" +  `
-            -p ou -play {texto} ➡ Busca e toca música 
-            -skip ou - stop ➡ Para de tocar música
-            -lofi ➡ Tocar lofi de minecraft aleatório
-            ` + "```")
+            message.channel.send(">" + " **Comando inválido**")
+            message.channel.send(`
+> -p ou -play ➡ *Busca e toca música do youtube*
+> -skip ou -stop ➡ *Para de tocar música*
+> -lofi ➡ *Toca lofi de minecraft aleatório*
+        `)
         }
 
 
