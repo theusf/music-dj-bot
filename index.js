@@ -225,8 +225,7 @@ async function play(guild, message, url = "") {
                 title: songInfo.videoDetails.title,
                 url: songInfo.videoDetails.video_url,
                 thumb: songInfo.videoDetails.thumbnails[0].url,
-                singer: songInfo.videoDetails.author.name,
-                description: songInfo.videoDetails.description.slice(0, 20)
+                singer: songInfo.videoDetails.author.name
             };
 
             //console.log(songInfo)
