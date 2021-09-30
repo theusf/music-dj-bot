@@ -4,7 +4,7 @@ const queue = new Map();
 const ytdl = require('ytdl-core-discord');
 const youtube = require('./libs/youtube-search-without-api-key');
 const disbut = require('discord-buttons');
-
+const messages = require('./messages')
 require('dotenv').config();
 
 const token = process.env.TOKEN;
@@ -26,10 +26,17 @@ const playlist_urls = [
 const client = new Discord.Client();
 disbut(client);
 
+let bot;
+
 client.login(token);
 
 client.once('ready', async () => {
     console.log('Ready!');
+
+    bot = {
+        name: client.user.username,
+        avatar: client.user.avatarURL(),
+    }
 });
 
 client.once('reconnecting', () => {
@@ -42,7 +49,7 @@ client.once('disconnect', () => {
 
 let buttonStop = new disbut.MessageButton()
     .setStyle('red') //default: blurple
-    .setLabel('PARAR') //default: NO_LABEL_PROVIDED
+    .setLabel('Parar 🛑') //default: NO_LABEL_PROVIDED
     .setID('btnStop') //note: if you use the style "url" you must provide url using .setURL('https://example.com')
 
 
@@ -131,7 +138,7 @@ async function searchAndPlay(message, serverQueue) {
 
         console.log(search_param)
 
-        message.channel.send(`Buscando **${search_param}** 🔍🤔`);
+        //message.channel.send(messages.searchMessage(message.author, search_param));
 
         const videos = await youtube.search(search_param);
 
@@ -195,10 +202,8 @@ async function execute(message, serverQueue, url = "") {
 function stop(message, serverQueue) {
     voiceChannel = message.member.voice.channel;
 
-    if (!voiceChannel)
-        return message.channel.send('You have to be in a voice channel to stop the music!');
     if (!serverQueue)
-        return message.channel.send(`Unfortunately, I'm not playing any lo-fi right now`);
+        return message.channel.send(messages.generic(`Ta chapando?`, 'Não estou tocando nada agora.', bot.avatar));
 
     serverQueue.voiceChannel.leave();
 
@@ -208,43 +213,54 @@ function stop(message, serverQueue) {
 
 async function play(guild, message, url = "") {
     const serverQueue = queue.get(guild.id);
-
+    
     try {
 
         url ? url : url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
 
         try {
             const songInfo = await ytdl.getInfo(url);
-
+            //console.log(songInfo)
             const song = {
                 title: songInfo.videoDetails.title,
                 url: songInfo.videoDetails.video_url,
+                thumb: songInfo.videoDetails.thumbnails[0].url,
+                singer: songInfo.videoDetails.author.name,
+                description: songInfo.videoDetails.description.slice(0, 20)
             };
+
+            //console.log(songInfo)
 
             if (!song) {
                 serverQueue.voiceChannel.leave();
                 queue.delete(guild.id);
-                message.channel.send(`Vídeo não encontrado!`);
+                message.channel.send(messages.generic(`Vídeo não encontrado!`));
                 return;
             }
 
-            console.log(song)
-
             const dispatcher = serverQueue.connection.play(await ytdl(url), { type: 'opus' })
                 .on('start', () => {
-                    message.channel.send(`🎵🎧😼 Tocando **${song.title}** ! 🎶🎸🤠`);
-                    message.channel.send(`${song.url}`, buttonStop);
+                    message.channel.send(
+                        messages.playMessage(
+                        message.author, 
+                        song.title, 
+                        song.thumb, 
+                        song.url,
+                        song.singer), 
+                        buttonStop);
+                    
                 })
                 .on('end', () => {
                     console.log('Fim da música!');
                     //serverQueue.songs.shift();
                     serverQueue.playing = false;
-                    message.channel.send(`A música acabou, indo para a próxima 🎼`);
+                    //message.channel.send(`A música acabou, indo para a próxima 🎼`);
 
                     play(guild, message);
                 })
                 .on('finish',() => {
-                    message.channel.send(`A música acabou, indo para a próxima 🎼`);
+                    serverQueue.playing = false;
+                    message.channel.send(messages.generic('O som que estava tocando acabou.', '', bot.avatar))
                 })
                 .on('error', error => {
                     console.error(error);
@@ -253,7 +269,7 @@ async function play(guild, message, url = "") {
 
                     queue.delete(guild.id);
 
-                    return message.channel.send(`Ocorreu um erro! ${error}`);
+                    return message.channel.send(messages.generic(`Ocorreu um erro!, ${error}`, bot.avatar));
 
                 });
 
@@ -278,3 +294,6 @@ async function play(guild, message, url = "") {
 }
 
 
+module.exports = {
+    bot
+}
