@@ -163,6 +163,9 @@ async function execute(message, serverQueue, url = "") {
     try {
         voiceChannel = message.member.voice.channel;
 
+        if (new String(message.author.username).toLowerCase().includes('kau') || new String(message.author.username).toLowerCase().includes('Kauan') ) 
+            return  message.channel.send('http://24.media.tumblr.com/tumblr_m7475m5Crd1rwm8hso1_250.gif')
+
         const queueConstruct = queue.get(message.guild.id) || {
             textChannel: message.channel,
             voiceChannel: voiceChannel,
