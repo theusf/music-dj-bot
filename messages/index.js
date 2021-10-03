@@ -48,5 +48,23 @@ module.exports = {
             console.log(e)
             return content
         }
-    }
+    },
+
+    addedToQueue(author, videoTitle = 'Sem titulo', urlThumb = '', urlVideo = '', videoAuthor = '') {
+        try {
+            const embed = new Discord.MessageEmbed()
+            //.setDescription(videoTitle)
+            .addField(videoTitle, ` de ${videoAuthor}`)
+            .setColor(roxo)
+            .setThumbnail(urlThumb)
+            .setURL(urlVideo)
+            .setAuthor(author.username + " | " + ` Adicionado a fila 🎧😃🎶`, author.avatarURL())
+    
+            return embed
+        }
+        catch(e) {
+            console.log(e)
+            return `Adicionado **${videoTitle}** a fila! 🎵👂 ${e}`
+        }
+    },
 }

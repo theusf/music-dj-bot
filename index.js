@@ -86,7 +86,7 @@ client.on('message', async message => {
             return;
         }
         else if (message.content.startsWith(`${prefix}skip`)) {
-            stop(message, serverQueue);
+            skip(message, serverQueue);
             return;
         }
         else if (message.content.startsWith(`${prefix}stop`)) {
@@ -98,6 +98,9 @@ client.on('message', async message => {
         }
         else if (message.content.startsWith(`${prefix}p`)) {
             searchAndPlay(message, serverQueue);
+        }
+        else if (message.content.startsWith(`${prefix}fila limpar`)) {
+            clearQueue(message, serverQueue);
         }
         else {
             message.channel.send(">" + " **Comando inválido**")
@@ -124,6 +127,20 @@ client.on('message', async message => {
 
 });
 
+async function clearQueue(message, serverQueue) {
+    serverQueue.songs = [];
+    queue.set(message.guild.id, serverQueue)
+    return message.channel.send(messages.generic('A fila foi limpa com sucesso 🎶👽'))
+}
+
+async function skip(message, serverQueue) {
+    if (!serverQueue) {
+        return;
+    }
+
+    return play(message.guild, message, serverQueue, '', true)
+}
+
 async function searchAndPlay(message, serverQueue) {
     try {
         let sanitized_message = message.content.replace(`${prefix}busca`, '')
@@ -137,8 +154,6 @@ async function searchAndPlay(message, serverQueue) {
         const search_param = sanitized_message
 
         console.log(search_param)
-
-        //message.channel.send(messages.searchMessage(message.author, search_param));
 
         const videos = await youtube.search(search_param);
 
@@ -163,28 +178,24 @@ async function execute(message, serverQueue, url = "") {
     try {
         voiceChannel = message.member.voice.channel;
 
-        if (new String(message.author.username).toLowerCase().includes('kau') || new String(message.author.username).toLowerCase().includes('kauan') ) 
-            return  message.channel.send('http://24.media.tumblr.com/tumblr_m7475m5Crd1rwm8hso1_250.gif')
+        if (!serverQueue) {
+            serverQueue = {
+                textChannel: message.channel,
+                voiceChannel: voiceChannel,
+                connection: null,
+                songs: [],
+                volume: 5,
+                playing: false,
+            };
 
-        const queueConstruct = queue.get(message.guild.id) || {
-            textChannel: message.channel,
-            voiceChannel: voiceChannel,
-            connection: null,
-            songs: [],
-            volume: 5,
-            playing: false,
-        };
-
-        queue.set(message.guild.id, queueConstruct);
-
-        if (queueConstruct.playing)
-            return 
+            queue.set(message.guild.id, serverQueue);
+        }
 
         var connection = await voiceChannel.join();
 
-        queueConstruct.connection = connection;
+        serverQueue.connection = connection;
 
-        play(message.guild, message, url);
+        play(message.guild, message, serverQueue, url);
 
 
     } catch (err) {
@@ -214,12 +225,23 @@ function stop(message, serverQueue) {
 
 }
 
-async function play(guild, message, url = "") {
-    const serverQueue = queue.get(guild.id);
-    
-    try {
+async function play(guild, message, serverQueue, url = '', skip = false) {
+    //const serverQueue = queue.get(guild.id);
+    if (!url) 
+        url = serverQueue.songs.shift();
+    //console.log(serverQueue)  
+    console.log(serverQueue.songs)  
+    console.log(url)
 
-        url ? url : url = playlist_urls[Math.floor(Math.random() * playlist_urls.length)];
+    try {
+        if (!url && skip) {
+            message.channel.send(messages.generic('Sem músicas restantes na fila 🙅‍♂️❌', '', bot.avatar))
+            return stop(message, serverQueue)
+        }
+
+        if (!url) {
+            return;
+        }
 
         try {
             const songInfo = await ytdl.getInfo(url);
@@ -230,18 +252,26 @@ async function play(guild, message, url = "") {
                 thumb: songInfo.videoDetails.thumbnails[0].url,
                 singer: songInfo.videoDetails.author.name
             };
-
-            //console.log(songInfo)
-
+    
             if (!song) {
-                serverQueue.voiceChannel.leave();
-                queue.delete(guild.id);
-                message.channel.send(messages.generic(`Vídeo não encontrado!`));
-                return;
+                //serverQueue.voiceChannel.leave();
+                //queue.delete(guild.id);
+                return message.channel.send(messages.generic(`Vídeo não encontrado`, '', bot.avatar));
+            }
+
+            if (serverQueue.playing && !skip) {
+                serverQueue.songs.push(url)
+                return message.channel.send(messages.addedToQueue(message.author, 
+                    song.title, 
+                    song.thumb, 
+                    song.url,
+                    song.singer))
             }
 
             const dispatcher = serverQueue.connection.play(await ytdl(url), { type: 'opus' })
                 .on('start', () => {
+                    serverQueue.playing = true;
+
                     message.channel.send(
                         messages.playMessage(
                         message.author, 
@@ -252,17 +282,9 @@ async function play(guild, message, url = "") {
                         buttonStop);
                     
                 })
-                .on('end', () => {
-                    console.log('Fim da música!');
-                    //serverQueue.songs.shift();
-                    serverQueue.playing = false;
-                    //message.channel.send(`A música acabou, indo para a próxima 🎼`);
-
-                    play(guild, message);
-                })
                 .on('finish',() => {
                     serverQueue.playing = false;
-                    message.channel.send(messages.generic('O som que estava tocando acabou.', '', bot.avatar))
+                    play(message.guild, message, serverQueue);
                 })
                 .on('error', error => {
                     console.error(error);
@@ -295,6 +317,13 @@ async function play(guild, message, url = "") {
 
 }
 
+
+async function banirKauan(message, active = false) {
+    if (active) {
+        if (new String(message.author.username).toLowerCase().includes('kau') || new String(message.author.username).toLowerCase().includes('kauan') ) 
+        return  message.channel.send('http://24.media.tumblr.com/tumblr_m7475m5Crd1rwm8hso1_250.gif')
+    }
+}
 
 module.exports = {
     bot
