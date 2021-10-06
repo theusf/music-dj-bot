@@ -268,7 +268,7 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
                     song.singer))
             }
 
-            const dispatcher = serverQueue.connection.play(await ytdl(url), { type: 'opus' })
+            const dispatcher = serverQueue.connection.play(await ytdl(url, {filter: 'audioonly'}), { type: 'opus' } )
                 .on('start', () => {
                     serverQueue.playing = true;
 
@@ -300,7 +300,7 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
             dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
         }
         catch (e) {
-            message.channel.send(messages.generic('Erro ao tentar tocar som', JSON.stringify(e)));
+            throw new Error(e)
             //serverQueue.voiceChannel.leave();
         }
     }
@@ -309,10 +309,10 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
 
         queue.delete(message.guild.id);
 
-        if (serverQueue)
-            serverQueue.voiceChannel.leave();
+       // if (serverQueue)
+         //   serverQueue.voiceChannel.leave();
 
-        return message.channel.send(`An error happened and i cant play 😢: ${err.message}`);
+        return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Entre em contato com o Shiro 😁 ' + JSON.stringify(e), bot.avatar));
     }
 
 }
