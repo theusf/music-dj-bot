@@ -300,8 +300,8 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
             dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
         }
         catch (e) {
-            message.channel.send(`Erro ao tentar tocar som ${url} : ${e.message}`);
-            serverQueue.voiceChannel.leave();
+            message.channel.send(messages.generic('Erro ao tentar tocar som', JSON.stringify(e)));
+            //serverQueue.voiceChannel.leave();
         }
     }
     catch (err) {

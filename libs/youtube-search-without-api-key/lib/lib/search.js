@@ -53,7 +53,7 @@ function searchVideo(searchQuery) {
 
 
                     searchQuery =  searchQuery.split(' ').join('+')
-                    console.log(searchQuery)
+                    console.log(encodeURI(YOUTUBE_URL + "/results?search_query=" + searchQuery.trim() + "&hl=br"))
                     
                     return [4 /*yield*/, got_1.default.get(encodeURI(YOUTUBE_URL + "/results?search_query=" + searchQuery.trim() + "&hl=br"))];
                 case 1:
