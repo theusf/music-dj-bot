@@ -300,7 +300,8 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
             dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
         }
         catch (e) {
-            throw new Error(e)
+            return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Entre em contato com o Shiro 😁 ' + JSON.stringify(e), bot.avatar));
+            //throw new Error(e)
             //serverQueue.voiceChannel.leave();
         }
     }
