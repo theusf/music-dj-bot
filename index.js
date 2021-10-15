@@ -268,7 +268,8 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
                     song.singer))
             }
 
-            const dispatcher = serverQueue.connection.play(await ytdl(url, {filter: 'audioonly'}), { type: 'opus' } )
+            const dispatcher = serverQueue.connection.play(await ytdl(url, {filter: 'audioonly',  quality: 'highestaudio',
+            highWaterMark: 1 << 25}), { type: 'opus' } )
                 .on('start', () => {
                     serverQueue.playing = true;
 
