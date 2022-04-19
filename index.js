@@ -89,25 +89,20 @@ client.on('message', async message => {
             skip(message, serverQueue);
             return;
         }
-        else if (message.content.startsWith(`${prefix}stop`)) {
-            stop(message, serverQueue);
-            return;
-        }
-        else if (message.content.startsWith(`${prefix}play`)) {
+        else if (message.content.startsWith(`${prefix}play`) ||
+        message.content.startsWith(`${prefix}p`) ||
+        message.content.startsWith(`${prefix}P`)) {
             searchAndPlay(message, serverQueue);
         }
-        else if (message.content.startsWith(`${prefix}p`)) {
-            searchAndPlay(message, serverQueue);
-        }
-        else if (message.content.startsWith(`${prefix}fila limpar`)) {
+        else if (message.content.startsWith(`${prefix}clear`)) {
             clearQueue(message, serverQueue);
         }
         else {
             message.channel.send(">" + " **Comando inválido**")
             message.channel.send(`
-> -p ou -play ➡ *Busca e toca música do youtube*
-> -skip ou -stop ➡ *Para de tocar música*
-> -lofi ➡ *Toca lofi de minecraft aleatório*
+                > -p ou -play ➡ *Busca e toca música do youtube*
+                > -skip ou -stop ➡ *Para de tocar música*
+                > -lofi ➡ *Toca lofi de minecraft aleatório*
         `)
         }
 
@@ -148,7 +143,7 @@ async function searchAndPlay(message, serverQueue) {
         sanitized_message = sanitized_message.trim();
 
         if (!sanitized_message) {
-            return message.channel.send(`Faltando o que buscar né o idiota`);
+            return message.channel.send(`Faltando o que buscar né o idiota burro panaca`);
         }
 
         const search_param = sanitized_message
@@ -168,6 +163,9 @@ async function searchAndPlay(message, serverQueue) {
         execute(message, serverQueue, url)
     }
     catch (err) {
+        if (err === 403) {
+            searchAndPlay(message, serverQueue);
+        }
         message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
     }
 
@@ -234,7 +232,7 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
     console.log(url)
 
     try {
-        if (!url && skip) {
+        if (!url && skip && !serverQueue) {
             message.channel.send(messages.generic('Sem músicas restantes na fila 🙅‍♂️❌', '', bot.avatar))
             return stop(message, serverQueue)
         }
