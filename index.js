@@ -284,7 +284,7 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
                 })
                 .on('error', error => {
                     console.error(error);
-                    if (err.status == 403) {
+                    if (error.status == 403) {
                         serverQueue.songs.unshift(url);
                         return play(guild, message, serverQueue, url, skip);
                     }
