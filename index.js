@@ -148,7 +148,6 @@ async function searchAndPlay(message, serverQueue) {
 
         const search_param = sanitized_message
 
-        console.log(search_param)
 
         const videos = await youtube.search(search_param);
 
@@ -163,8 +162,9 @@ async function searchAndPlay(message, serverQueue) {
         execute(message, serverQueue, url)
     }
     catch (err) {
-        if (err === 403) {
+        if (err.status == 403) {
             searchAndPlay(message, serverQueue);
+            return;
         }
         message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
     }
@@ -227,12 +227,9 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
     //const serverQueue = queue.get(guild.id);
     if (!url) 
         url = serverQueue.songs.shift();
-    //console.log(serverQueue)  
-    console.log(serverQueue.songs)  
-    console.log(url)
 
     try {
-        if (!url && skip && !serverQueue) {
+        if (!url && skip && serverQueue.songs.length == 0) {
             message.channel.send(messages.generic('Sem músicas restantes na fila 🙅‍♂️❌', '', bot.avatar))
             return stop(message, serverQueue)
         }
@@ -242,8 +239,8 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
         }
 
         try {
+            
             const songInfo = await ytdl.getInfo(url);
-            //console.log(songInfo)
             const song = {
                 title: songInfo.videoDetails.title,
                 url: songInfo.videoDetails.video_url,
@@ -287,11 +284,14 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
                 })
                 .on('error', error => {
                     console.error(error);
-
+                    if (err.status == 403) {
+                        serverQueue.songs.unshift(url);
+                        return play(guild, message, serverQueue, url, skip);
+                    }
                     serverQueue.voiceChannel.leave();
 
                     queue.delete(guild.id);
-
+                    
                     return message.channel.send(messages.generic(`Ocorreu um erro!, ${error}`, bot.avatar));
 
                 });
@@ -315,14 +315,6 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
         return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Entre em contato com o Shiro 😁 ' + JSON.stringify(e), bot.avatar));
     }
 
-}
-
-
-async function banirKauan(message, active = false) {
-    if (active) {
-        if (new String(message.author.username).toLowerCase().includes('kau') || new String(message.author.username).toLowerCase().includes('kauan') ) 
-        return  message.channel.send('http://24.media.tumblr.com/tumblr_m7475m5Crd1rwm8hso1_250.gif')
-    }
 }
 
 module.exports = {
