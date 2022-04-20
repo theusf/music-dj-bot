@@ -163,8 +163,7 @@ async function searchAndPlay(message, serverQueue) {
     }
     catch (err) {
         if (err.status == 403) {
-            searchAndPlay(message, serverQueue);
-            return;
+            return searchAndPlay(message, serverQueue);
         }
         message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
     }
