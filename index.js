@@ -162,7 +162,7 @@ async function searchAndPlay(message, serverQueue) {
         execute(message, serverQueue, url)
     }
     catch (err) {
-        if (err.status == 403) {
+        if (error.includes(403)) {
             return searchAndPlay(message, serverQueue);
         }
         message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
@@ -222,7 +222,7 @@ function stop(message, serverQueue) {
 
 }
 
-async function play(guild, message, serverQueue, url = '', skip = false) {
+async function play(guild, message, serverQueue, url = '', skip = false, tryAgain = true) {
     //const serverQueue = queue.get(guild.id);
     if (!url) 
         url = serverQueue.songs.shift();
@@ -282,16 +282,18 @@ async function play(guild, message, serverQueue, url = '', skip = false) {
                     play(message.guild, message, serverQueue);
                 })
                 .on('error', error => {
-                    console.error(error);
-                    if (error.status == 403) {
+                    if (tryAgain) {
+                        console.error(error);
+                        message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬' + 'Erro: ' + JSON.stringify(error), bot.avatar));
                         serverQueue.songs.unshift(url);
-                        return play(guild, message, serverQueue, url, skip);
-                    }
-                    serverQueue.voiceChannel.leave();
+                        return play(guild, message, serverQueue, url, skip, false);
+                    } else {
+                        serverQueue.voiceChannel.leave();
 
-                    queue.delete(guild.id);
-                    
-                    return message.channel.send(messages.generic(`Ocorreu um erro!, ${error}`, bot.avatar));
+                        queue.delete(guild.id);
+                        
+                        return message.channel.send(messages.generic('Moiô deu errado dois🥈 vez 💔' + 'Erro: ' + JSON.stringify(error), bot.avatar));
+                    }
 
                 });
 
