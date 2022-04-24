@@ -284,7 +284,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
                 .on('error', error => {
                     if (tryAgain) {
                         console.error(error);
-                        message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬' + 'Erro: ' + JSON.stringify(error), bot.avatar));
+                        message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬' + ' Erro: ' + JSON.stringify(error), bot.avatar));
                         serverQueue.songs.unshift(url);
                         return play(guild, message, serverQueue, url, skip, false);
                     } else {
@@ -300,7 +300,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
             dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
         }
         catch (e) {
-            return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Entre em contato com o Shiro 😁 ' + JSON.stringify(e), bot.avatar));
+            return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Provavelmente o vídeo não existe mais no brasil ❌😁 ' + JSON.stringify(e), bot.avatar));
             //throw new Error(e)
             //serverQueue.voiceChannel.leave();
         }
