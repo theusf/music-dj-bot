@@ -284,7 +284,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
                 .on('error', error => {
                     if (tryAgain) {
                         console.error(error);
-                        message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬' + ' Erro: ' + JSON.stringify(error), bot.avatar));
+                        message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬', 'Erro: ' + JSON.stringify(error), bot.avatar));
                         serverQueue.songs.unshift(url);
                         return play(guild, message, serverQueue, url, skip, false);
                     } else {
@@ -292,7 +292,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
 
                         queue.delete(guild.id);
                         
-                        return message.channel.send(messages.generic('Moiô deu errado dois🥈 vez 💔' + 'Erro: ' + JSON.stringify(error), bot.avatar));
+                        return message.channel.send(messages.generic('Moiô deu errado dois✌ vez 💔', 'Erro: ' + JSON.stringify(error), bot.avatar));
                     }
 
                 });
