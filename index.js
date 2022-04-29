@@ -286,7 +286,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
                         console.error(error);
                         message.channel.send(messages.generic('Deu erro, mas vou tentar denovo 🤬', 'Erro: ' + JSON.stringify(error), bot.avatar));
                         serverQueue.songs.unshift(url);
-                        return play(guild, message, serverQueue, url, skip, false);
+                        return play(guild, message, serverQueue, '', skip, false);
                     } else {
                         serverQueue.voiceChannel.leave();
 
