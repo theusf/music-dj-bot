@@ -90,8 +90,8 @@ client.on('message', async message => {
             return;
         }
         else if (message.content.startsWith(`${prefix}play`) ||
-        message.content.startsWith(`${prefix}p`) ||
-        message.content.startsWith(`${prefix}P`)) {
+            message.content.startsWith(`${prefix}p`) ||
+            message.content.startsWith(`${prefix}P`)) {
             searchAndPlay(message, serverQueue);
         }
         else if (message.content.startsWith(`${prefix}clear`)) {
@@ -148,9 +148,7 @@ async function searchAndPlay(message, serverQueue) {
 
         const search_param = sanitized_message
 
-
         const videos = await youtube.search(search_param);
-
         if (videos.length == 0) {
             return message.channel.send(`Não achei nenhum vídeo no youtube com ${search_param} 🙅‍♂️❌`);
         }
@@ -162,14 +160,10 @@ async function searchAndPlay(message, serverQueue) {
         execute(message, serverQueue, url)
     }
     catch (err) {
-        if (error.includes(403)) {
-            return searchAndPlay(message, serverQueue);
-        }
         message.channel.send(`Cara buguei, fala com o Shiro 😢: ${err.message}`);
     }
 
 }
-
 
 async function execute(message, serverQueue, url = "") {
     try {
@@ -224,7 +218,7 @@ function stop(message, serverQueue) {
 
 async function play(guild, message, serverQueue, url = '', skip = false, tryAgain = true) {
     //const serverQueue = queue.get(guild.id);
-    if (!url) 
+    if (!url)
         url = serverQueue.songs.shift();
 
     try {
@@ -238,7 +232,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
         }
 
         try {
-            
+
             const songInfo = await ytdl.getInfo(url);
             const song = {
                 title: songInfo.videoDetails.title,
@@ -246,7 +240,7 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
                 thumb: songInfo.videoDetails.thumbnails[0].url,
                 singer: songInfo.videoDetails.author.name
             };
-    
+
             if (!song) {
                 //serverQueue.voiceChannel.leave();
                 //queue.delete(guild.id);
@@ -255,29 +249,31 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
 
             if (serverQueue.playing && !skip) {
                 serverQueue.songs.push(url)
-                return message.channel.send(messages.addedToQueue(message.author, 
-                    song.title, 
-                    song.thumb, 
+                return message.channel.send(messages.addedToQueue(message.author,
+                    song.title,
+                    song.thumb,
                     song.url,
                     song.singer))
             }
 
-            const dispatcher = serverQueue.connection.play(await ytdl(url, {filter: 'audioonly',  quality: 'highestaudio',
-            highWaterMark: 1 << 25}), { type: 'opus' } )
+            const dispatcher = serverQueue.connection.play(await ytdl(url, {
+                filter: 'audioonly', quality: 'highestaudio',
+                highWaterMark: 1 << 25
+            }), { type: 'opus' })
                 .on('start', () => {
                     serverQueue.playing = true;
 
                     message.channel.send(
                         messages.playMessage(
-                        message.author, 
-                        song.title, 
-                        song.thumb, 
-                        song.url,
-                        song.singer), 
+                            message.author,
+                            song.title,
+                            song.thumb,
+                            song.url,
+                            song.singer),
                         buttonStop);
-                    
+
                 })
-                .on('finish',() => {
+                .on('finish', () => {
                     serverQueue.playing = false;
                     play(message.guild, message, serverQueue);
                 })
@@ -291,8 +287,8 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
                         serverQueue.voiceChannel.leave();
 
                         queue.delete(guild.id);
-                        
-                        return message.channel.send(messages.generic('Moiô deu errado dois✌ vez 💔', 'Erro: ' + JSON.stringify(error), bot.avatar));
+
+                        return message.channel.send(messages.generic('Moiô deu errado dois✌ vez 💔 GG VEI 🐝', 'Erro: ' + JSON.stringify(error), bot.avatar));
                     }
 
                 });
@@ -310,13 +306,34 @@ async function play(guild, message, serverQueue, url = '', skip = false, tryAgai
 
         queue.delete(message.guild.id);
 
-       // if (serverQueue)
-         //   serverQueue.voiceChannel.leave();
+        // if (serverQueue)
+        //   serverQueue.voiceChannel.leave();
 
         return message.channel.send(messages.generic('Erro ao tentar tocar som', 'Entre em contato com o Shiro 😁 ' + JSON.stringify(e), bot.avatar));
     }
-
 }
+/* async function isPlaylist(searchParams) {
+    if (checkUrl(searchParams)) {
+        //const mixPlaylist = await ytmpl(searchParams);
+        //const videoId = 'XCcN-IoYIJA';
+        const url = 'https://www.youtube.com/playlist?list=PLWKjhJtqVAbnZtkAI3BqcYxKnfWn_C704';
+
+        ytlist(url, 'url').then(res => {
+            console.log(res);
+
+        });
+    }
+}
+
+function checkUrl(string) {
+    try {
+        let url = new URL(string)
+        return true
+    } catch (err) {
+        return false
+    }
+} */
+
 
 module.exports = {
     bot
